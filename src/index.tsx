@@ -1,4 +1,26 @@
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform, PermissionsAndroid } from 'react-native';
+
+async function requestStoragePermission() {
+  try {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+      {
+        title: 'Storage Permission',
+        message: 'Your app needs access to storage',
+        buttonNeutral: 'Ask Me Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
+      }
+    );
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      console.log('Storage permission granted');
+    } else {
+      console.log('Storage permission denied');
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
 
 const LINKING_ERROR =
   `The package 'rn-image-upload-module' doesn't seem to be linked. Make sure: \n\n` +
@@ -20,3 +42,12 @@ const RnImageUploadModule = NativeModules.RnImageUploadModule
 export function multiply(a: number, b: number): Promise<number> {
   return RnImageUploadModule.multiply(a, b);
 }
+
+export function uploadImage(imageObject: object): Promise<string> {
+  if (!RnImageUploadModule.uploadImage) {
+    throw new Error('Image upload function is not available');
+  }
+  return RnImageUploadModule.uploadImage(imageObject);
+}
+
+export { requestStoragePermission };
