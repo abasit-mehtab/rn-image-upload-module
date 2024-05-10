@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  SafeAreaView,
   Image,
   ToastAndroid,
 } from 'react-native';
@@ -95,6 +96,8 @@ export default function App() {
       console.log('Response from uploadImage native function ==>> ', resp);
     } catch (error) {
       console.log('Error in uploading image ==>> ', error);
+      const errorMessage = error?.toString();
+      ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
     }
   };
 
@@ -112,57 +115,61 @@ export default function App() {
   }, [result, imageSelected]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.imageBox}>
-        {imageData != null ? (
-          <Image
-            source={{ uri: imageData?.uri }}
-            style={styles.imageStyle}
-            resizeMode="contain"
-          />
-        ) : (
-          <Text style={styles.textStyle}>No Image!</Text>
-        )}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.subContainer}>
+        <View style={styles.imageBox}>
+          {imageData != null ? (
+            <Image
+              source={{ uri: imageData?.uri }}
+              style={styles.imageStyle}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={styles.textStyle}>No Image!</Text>
+          )}
+        </View>
+
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity
+            onPress={() => onGalleryPress()}
+            style={styles.buttonStyle}
+          >
+            <Text style={styles.buttonTextStyle}>Select from Gallery</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => onCameraPress()}
+            style={styles.buttonStyle}
+          >
+            <Text style={styles.buttonTextStyle}>Take from Camera</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => onUploadImage()}
+            style={styles.smallButtonStyle}
+          >
+            <Text style={styles.buttonTextStyle}>Upload</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => onClearPress()}
+            style={styles.smallButtonStyle}
+          >
+            <Text style={styles.buttonTextStyle}>Clear</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View>
-        <TouchableOpacity
-          onPress={() => onGalleryPress()}
-          style={styles.buttonStyle}
-        >
-          <Text style={styles.buttonTextStyle}>Select from Gallery</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => onCameraPress()}
-          style={styles.buttonStyle}
-        >
-          <Text style={styles.buttonTextStyle}>Take from Camera</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => onUploadImage()}
-          style={styles.smallButtonStyle}
-        >
-          <Text style={styles.buttonTextStyle}>Upload</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => onClearPress()}
-          style={styles.smallButtonStyle}
-        >
-          <Text style={styles.buttonTextStyle}>Clear</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  subContainer: {
+    paddingVertical: 50,
   },
   imageBox: {
     width: 250,
@@ -177,6 +184,9 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 16,
   },
+  buttonsContainer: {
+    alignItems: 'center',
+  },
   buttonStyle: {
     backgroundColor: '#0d1e8c',
     width: 160,
@@ -190,7 +200,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0d1e8c',
     width: 90,
     height: 40,
-    alignSelf: 'center',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',

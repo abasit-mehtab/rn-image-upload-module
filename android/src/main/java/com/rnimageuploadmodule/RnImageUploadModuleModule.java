@@ -17,7 +17,17 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.net.URI;
+
+
+import android.content.Context;
+import android.os.Environment;
+
+import android.util.Log;
 
 @ReactModule(name = RnImageUploadModuleModule.NAME)
 public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
@@ -33,6 +43,31 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
   @NonNull
   public String getName() {
     return NAME;
+  }
+
+  public void copyFile(File sourceFile, File destFile) throws IOException {
+    if (!destFile.getParentFile().exists()) {
+      destFile.getParentFile().mkdirs();
+    }
+
+    FileChannel source = null;
+    FileChannel destination = null;
+
+    try {
+      source = new FileInputStream(sourceFile).getChannel();
+      destination = new FileOutputStream(destFile).getChannel();
+      destination.transferFrom(source, 0, source.size());
+    } catch (IOException e) {
+      Log.e("COPY_FILE_ERROR", "Error copying file: " + e.getMessage());
+      throw e;
+    } finally {
+      if (source != null) {
+        source.close();
+      }
+      if (destination != null) {
+        destination.close();
+      }
+    }
   }
 
 
@@ -53,17 +88,32 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
     }
 
     try {
-      String imagePath = imageObject.getString("uri");
+      String imagePath = imageObject.getString("originalPath");
       File imageFile = new File(imagePath);
 
-      if (!imageFile.exists()) {
-        promise.reject("IMAGE_NOT_FOUND", "Image file not found at specified path");
-        return;
-      }
+      Context context = getReactApplicationContext();
+
+      File cacheDir = context.getCacheDir();
+
+      Log.d("CACHE_DIR", cacheDir.getAbsolutePath());
+
+      String newFilePath = cacheDir.getAbsolutePath() + File.separator + imageFile.getName();
+
+      Log.d("newFilePath", newFilePath);
+
+      File newImageFile = new File(newFilePath);
+
+      Log.d("imagePath", imagePath);
+
+      Log.d("UPLOAD_IMAGE_BEFORE", "Copying file...");
+
+      copyFile(imageFile, newImageFile);
+
+      Log.d("UPLOAD_IMAGE_AFTER", "File copied successfully");
 
       RequestBody requestBody = new MultipartBody.Builder()
         .setType(MultipartBody.FORM)
-        .addFormDataPart("image", imageFile.getName(), RequestBody.create(MediaType.parse("image/*"), imageFile))
+        .addFormDataPart("image", newImageFile.getName(), RequestBody.create(MediaType.parse("image/*"), newImageFile))
         .build();
 
       Request request = new Request.Builder()
