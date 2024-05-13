@@ -36,7 +36,9 @@ import android.util.Log;
 public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
   public static final String NAME = "RnImageUploadModule";
 
-  private static final String API_URL = "https://picayune-harvest-canoe.glitch.me/upload";
+  private static final String API_URL = "https://getweys-scan-bot-be-production.up.railway.app/api/driver-license-scan";
+  private String apiKey;
+
 
   public RnImageUploadModuleModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -56,7 +58,18 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void uploadBase64Image(String base64Image, Promise promise) {
+  public void configure(ReadableMap config, Promise promise) {
+    if (config.hasKey("apiKey")) {
+      apiKey = config.getString("apiKey");
+      promise.resolve("Configured successfully");
+    } else {
+      promise.reject("INVALID_CONFIG", "API Key is missing");
+      Log.e(NAME, "API Key is missing");
+    }
+  }
+
+  @ReactMethod
+  public void scanDriverLicense(String base64Image, Promise promise) {
     OkHttpClient client = new OkHttpClient();
 
     if (base64Image == null || base64Image.isEmpty()) {
@@ -85,16 +98,18 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
 
       Request request = new Request.Builder()
         .url(API_URL)
+        .addHeader("x-api-key", apiKey)
         .post(requestBody)
         .build();
       
       Response response = client.newCall(request).execute();
+      String responseBody = response.body().string();
+      JSONObject responseJson = new JSONObject(responseBody);
         
         if (response.isSuccessful()) {
-          String responseBody = response.body().string();
-          promise.resolve("Image uploaded successfully: " + responseBody);
+          promise.resolve(responseJson);
         } else {
-          promise.reject("UPLOAD_FAILED", "Failed to upload image. Server returned unsuccessful response.");
+          promise.reject("UPLOAD_FAILED", responseBody);
         }
 
         tempImageFile.delete();

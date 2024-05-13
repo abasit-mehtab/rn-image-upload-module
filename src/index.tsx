@@ -39,15 +39,29 @@ const RnImageUploadModule = NativeModules.RnImageUploadModule
       }
     );
 
-export function multiply(a: number, b: number): Promise<number> {
+function multiply(a: number, b: number): Promise<number> {
   return RnImageUploadModule.multiply(a, b);
 }
 
-export function uploadBase64Image(base64Image: string): Promise<string> {
-  if (!RnImageUploadModule.uploadBase64Image) {
+function configure(config: { apiKey: string }): Promise<string> {
+  if (!RnImageUploadModule.configure) {
+    throw new Error('configure function is not available');
+  }
+  return RnImageUploadModule.configure(config);
+}
+
+function scanDriverLicense(base64Image: string): Promise<string> {
+  if (!RnImageUploadModule.scanDriverLicense) {
     throw new Error('Image upload function is not available');
   }
-  return RnImageUploadModule.uploadBase64Image(base64Image);
+  return RnImageUploadModule.scanDriverLicense(base64Image);
+}
+
+export function getScan() {
+  return {
+    configure: (config: { apiKey: string }) => configure(config),
+    scanDriverLicense: (base64Image: string) => scanDriverLicense(base64Image),
+  };
 }
 
 export { requestStoragePermission };

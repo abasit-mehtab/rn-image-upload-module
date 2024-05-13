@@ -8,23 +8,18 @@ import {
   SafeAreaView,
   Image,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
-import {
-  multiply,
-  uploadBase64Image,
-  requestStoragePermission,
-} from 'rn-image-upload-module';
+import { getScan } from 'rn-image-upload-module';
 
 export default function App() {
-  const [result, setResult] = React.useState<number | undefined>();
   const [imageSelected, setImageSelcted] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [imageData, setImageData] = React.useState(null);
 
   const onGalleryPress = React.useCallback(async () => {
     try {
-      await requestStoragePermission();
-
       const options: ImagePicker.ImageLibraryOptions = {
         selectionLimit: 1,
         mediaType: 'photo',
@@ -85,6 +80,11 @@ export default function App() {
   }, []);
 
   const onUploadImage = async () => {
+    setIsLoading(true);
+    const config = {
+      apiKey: 'ca0c4c32-6470-47ed-acd6-3808a1735f20',
+    };
+
     try {
       if (imageData == null) {
         ToastAndroid.show(
@@ -93,29 +93,31 @@ export default function App() {
         );
         return;
       }
-      const resp = await uploadBase64Image(imageData?.base64);
 
-      console.log('Response from uploadImage native function ==>> ', resp);
+      const configResp = await getScan().configure(config);
+
+      const resp = await getScan().scanDriverLicense(imageData?.base64);
+
+      const responseData = JSON.parse(resp);
+
+      console.log('Response from configure native function ==>> ', configResp);
+      console.log(
+        'Response from uploadImage native function ==>> ',
+        JSON.stringify(responseData, null, 2)
+      );
       ToastAndroid.show('Image uploaded successfully', ToastAndroid.SHORT);
+      setIsLoading(false);
     } catch (error) {
       console.log('Error in uploading image ==>> ', error);
       const errorMessage = error?.toString();
       ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
+      setIsLoading(false);
     }
   };
 
   const onClearPress = () => {
     setImageData(null);
   };
-
-  React.useEffect(() => {
-    multiply(3, 7).then(setResult);
-  }, []);
-
-  React.useEffect(() => {
-    console.log('result ==>> ', result);
-    console.log('imageSelected ==>> ', imageSelected);
-  }, [result, imageSelected]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -150,8 +152,13 @@ export default function App() {
           <TouchableOpacity
             onPress={() => onUploadImage()}
             style={styles.smallButtonStyle}
+            disabled={isLoading ? true : false}
           >
-            <Text style={styles.buttonTextStyle}>Upload</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color={'#FFFFFF'} />
+            ) : (
+              <Text style={styles.buttonTextStyle}>Upload</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
