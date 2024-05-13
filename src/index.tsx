@@ -39,10 +39,6 @@ const RnImageUploadModule = NativeModules.RnImageUploadModule
       }
     );
 
-function multiply(a: number, b: number): Promise<number> {
-  return RnImageUploadModule.multiply(a, b);
-}
-
 function configure(config: { apiKey: string }): Promise<string> {
   if (!RnImageUploadModule.configure) {
     throw new Error('configure function is not available');

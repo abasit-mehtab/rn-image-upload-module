@@ -123,7 +123,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <View style={styles.subContainer}>
         <View style={styles.imageBox}>
-          {imageData != null ? (
+          {imageSelected ? (
             <Image
               source={{ uri: imageData?.uri }}
               style={styles.imageStyle}
