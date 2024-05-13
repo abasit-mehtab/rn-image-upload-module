@@ -43,11 +43,11 @@ export function multiply(a: number, b: number): Promise<number> {
   return RnImageUploadModule.multiply(a, b);
 }
 
-export function uploadImage(imageObject: object): Promise<string> {
-  if (!RnImageUploadModule.uploadImage) {
+export function uploadBase64Image(base64Image: string): Promise<string> {
+  if (!RnImageUploadModule.uploadBase64Image) {
     throw new Error('Image upload function is not available');
   }
-  return RnImageUploadModule.uploadImage(imageObject);
+  return RnImageUploadModule.uploadBase64Image(base64Image);
 }
 
 export { requestStoragePermission };

@@ -12,7 +12,7 @@ import {
 import * as ImagePicker from 'react-native-image-picker';
 import {
   multiply,
-  uploadImage,
+  uploadBase64Image,
   requestStoragePermission,
 } from 'rn-image-upload-module';
 
@@ -28,6 +28,7 @@ export default function App() {
       const options: ImagePicker.ImageLibraryOptions = {
         selectionLimit: 1,
         mediaType: 'photo',
+        includeBase64: true,
       };
 
       ImagePicker.launchImageLibrary(options, (res) => {
@@ -59,6 +60,7 @@ export default function App() {
       const options = {
         saveToPhotos: false,
         mediaType: 'photo',
+        includeBase64: true,
       };
 
       ImagePicker.launchCamera(options, (res) => {
@@ -91,9 +93,10 @@ export default function App() {
         );
         return;
       }
-      const resp = await uploadImage(imageData);
+      const resp = await uploadBase64Image(imageData?.base64);
 
       console.log('Response from uploadImage native function ==>> ', resp);
+      ToastAndroid.show('Image uploaded successfully', ToastAndroid.SHORT);
     } catch (error) {
       console.log('Error in uploading image ==>> ', error);
       const errorMessage = error?.toString();

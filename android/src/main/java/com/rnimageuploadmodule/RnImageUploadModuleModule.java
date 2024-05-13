@@ -22,6 +22,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 
 import android.content.Context;
@@ -45,32 +48,6 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
     return NAME;
   }
 
-  public void copyFile(File sourceFile, File destFile) throws IOException {
-    if (!destFile.getParentFile().exists()) {
-      destFile.getParentFile().mkdirs();
-    }
-
-    FileChannel source = null;
-    FileChannel destination = null;
-
-    try {
-      source = new FileInputStream(sourceFile).getChannel();
-      destination = new FileOutputStream(destFile).getChannel();
-      destination.transferFrom(source, 0, source.size());
-    } catch (IOException e) {
-      Log.e("COPY_FILE_ERROR", "Error copying file: " + e.getMessage());
-      throw e;
-    } finally {
-      if (source != null) {
-        source.close();
-      }
-      if (destination != null) {
-        destination.close();
-      }
-    }
-  }
-
-
   // Example method
   // See https://reactnative.dev/docs/native-modules-android
   @ReactMethod
@@ -79,41 +56,31 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void uploadImage(ReadableMap imageObject, Promise promise) {
+  public void uploadBase64Image(String base64Image, Promise promise) {
     OkHttpClient client = new OkHttpClient();
 
-    if (imageObject == null) {
-      promise.reject("INVALID_ARGUMENT", "Image object is null");
+    if (base64Image == null || base64Image.isEmpty()) {
+      promise.reject("INVALID_ARGUMENT", "Image is null or empty");
       return;
     }
 
     try {
-      String imagePath = imageObject.getString("originalPath");
-      File imageFile = new File(imagePath);
+     
+      byte[] imageBytes = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
 
-      Context context = getReactApplicationContext();
+      String currentDateTime = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
 
-      File cacheDir = context.getCacheDir();
+      File tempImageFile = File.createTempFile("img_" + currentDateTime, ".jpg", getReactApplicationContext().getCacheDir());
 
-      Log.d("CACHE_DIR", cacheDir.getAbsolutePath());
+      FileOutputStream fos = new FileOutputStream(tempImageFile);
 
-      String newFilePath = cacheDir.getAbsolutePath() + File.separator + imageFile.getName();
-
-      Log.d("newFilePath", newFilePath);
-
-      File newImageFile = new File(newFilePath);
-
-      Log.d("imagePath", imagePath);
-
-      Log.d("UPLOAD_IMAGE_BEFORE", "Copying file...");
-
-      copyFile(imageFile, newImageFile);
-
-      Log.d("UPLOAD_IMAGE_AFTER", "File copied successfully");
+      fos.write(imageBytes);
+      fos.flush();
+      fos.close();
 
       RequestBody requestBody = new MultipartBody.Builder()
         .setType(MultipartBody.FORM)
-        .addFormDataPart("image", newImageFile.getName(), RequestBody.create(MediaType.parse("image/*"), newImageFile))
+        .addFormDataPart("image", tempImageFile.getName(), RequestBody.create(MediaType.parse("image/*"), tempImageFile))
         .build();
 
       Request request = new Request.Builder()
@@ -124,10 +91,13 @@ public class RnImageUploadModuleModule extends ReactContextBaseJavaModule {
       Response response = client.newCall(request).execute();
         
         if (response.isSuccessful()) {
-          promise.resolve("Image uploaded successfully.");
+          String responseBody = response.body().string();
+          promise.resolve("Image uploaded successfully: " + responseBody);
         } else {
           promise.reject("UPLOAD_FAILED", "Failed to upload image. Server returned unsuccessful response.");
         }
+
+        tempImageFile.delete();
     } catch (IOException e) {
         promise.reject("UPLOAD_FAILED", "Failed to upload image due to an exception: " + e.getMessage());
     }
